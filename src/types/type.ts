@@ -13,6 +13,7 @@ interface Testimonial {
   name: string;
   message: string;
   photo: string;
+  rating: number;
 }
 
 export interface Cosmetic {
