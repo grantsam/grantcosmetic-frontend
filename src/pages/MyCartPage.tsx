@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { CartItem, Cosmetic } from "../types/type";
 import apiClient from "../services/apiServices";
 import { Link } from "react-router-dom";
-import { set } from "zod";
 
 export default function MyCartPage() {
   const [cosmeticDetails, setCosmeticDetails] = useState<Cosmetic[]>([]);
@@ -220,7 +219,12 @@ export default function MyCartPage() {
                           /qty
                         </p>
                         <div className="flex w-[89px] items-center justify-between gap-1 rounded-full bg-[#F6F6F8] px-2 py-[6px]">
-                          <button type="button" onClick={() => handlerDecreaseQuantity(cosmetic.slug)}>  
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handlerDecreaseQuantity(cosmetic.slug)
+                            }
+                          >
                             <img
                               src="/assets/images/icons/min.svg"
                               alt="icon"
@@ -230,7 +234,12 @@ export default function MyCartPage() {
                           <p className="text-center text-sm font-semibold leading-[21px]">
                             {cartItem ? cartItem.quantity : 1}
                           </p>
-                          <button type="button" onClick={() => handlerIncareaseQuantity(cosmetic.slug)}>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handlerIncareaseQuantity(cosmetic.slug)
+                            }
+                          >
                             <img
                               src="/assets/images/icons/plus.svg"
                               alt="icon"
@@ -329,23 +338,23 @@ export default function MyCartPage() {
                     {formatCurrency(total)}
                   </strong>
                 </div>
-
-                {cartItems.length === 0 && (
-                <Link to ={`/booking`}
-                  type="submit"
-                  className="flex w-full items-center justify-between rounded-full bg-cosmetics-gradient-pink-white px-5 py-[14px] transition-all duration-300 hover:shadow-[0px_6px_22px_0px_#FF4D9E82]"
+                {cartItems.length !== 0 && (
+                  <Link
+                    to={`/booking`}
+                    type="submit"
+                    className="flex w-full items-center justify-between rounded-full bg-cosmetics-gradient-pink-white px-5 py-[14px] transition-all duration-300 hover:shadow-[0px_6px_22px_0px_#FF4D9E82]"
                   >
-                  <strong className="font-semibold text-white">
-                    Continue Booking
-                  </strong>
-                  <img
-                    src="/assets/images/icons/right.svg"
-                    alt="icon"
-                    className="size-[24px] shrink-0"
-                  />
-                </Link>
-                )};
-
+                    <strong className="font-semibold text-white">
+                      Continue Booking
+                    </strong>
+                    <img
+                      src="/assets/images/icons/right.svg"
+                      alt="icon"
+                      className="size-[24px] shrink-0"
+                    />
+                  </Link>
+                )}
+                
               </div>
             </form>
           </section>

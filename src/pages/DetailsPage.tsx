@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import apiClient from "../services/apiServices";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { set } from "zod";
 
 export default function Detailspage() {
   const { slug } = useParams<{ slug: string }>();
@@ -132,7 +131,7 @@ export default function Detailspage() {
           </div>
         </div>
       </section>
-      <form action="my-cart.html">
+      <Link to ={`/cart`}>
         <div className="flex flex-col gap-5">
           <section id="HeroSlider" className="px-5">
             <div className="flex w-full flex-col items-center gap-[30px] rounded-[30px] bg-white px-[24.5px] py-[30px]">
@@ -459,7 +458,7 @@ export default function Detailspage() {
             </button>
           </div>
         </nav>
-      </form>
+      </Link>
     </main>
   );
 }
