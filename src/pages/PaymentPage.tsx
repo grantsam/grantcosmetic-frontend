@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BookingFormData, CartItem, Cosmetic } from "../types/type";
-import { promise, set, z } from "zod";
-import { useNavigate } from "react-router-dom";
+import { z } from "zod";
+import { Link, useNavigate } from "react-router-dom";
 import apiClient from "../services/apiServices";
+import { paymentSchema } from "../types/validationBooking";
 
 type FormData = {
   proof: File | null;
@@ -25,19 +26,21 @@ export default function PaymentPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const TAX_RATE = 0.11; // 11% tax rate
   const navigate = useNavigate();
+  const TAX_RATE = 0.11; // Assuming a tax rate of 11%
 
-  const fetchCosmeticDetails = async () => {
+  const fetchCosmeticDetails = async (cartItems: CartItem[]) => {
     try {
       const fetchDetails = await Promise.all(
         cartItems.map(async (item) => {
-          const response = await apiClient.get(`/cosmetics/${item.slug}`);
+          const response = await apiClient.get(`/cosmetic/${item.slug}`);
           return response.data.data;
         })
       );
+
       setCosmeticDetails(fetchDetails);
       setLoading(false);
+
       const cosmeticIdsWtihQuantities = cartItems.map((cartItem) => ({
         id: cartItem.cosmetic_id,
         quantity: cartItem.quantity,
@@ -58,7 +61,7 @@ export default function PaymentPage() {
 
   useEffect(() => {
     const cartData = localStorage.getItem("cart");
-    const savedBookingFormData = localStorage.getItem("bookingFormData");
+    const savedBookingFormData = localStorage.getItem("bookingData");
     if (savedBookingFormData) {
       setBookingFormData(JSON.parse(savedBookingFormData) as BookingFormData);
     }
@@ -71,13 +74,141 @@ export default function PaymentPage() {
     fetchCosmeticDetails(cartItems);
   }, [navigate]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files ? e.target.files[0] : null;
+    setFormData((prevData) => ({
+      ...prevData,
+      proof: file,
+    }));
+  };
+
+  const subtotal = cosmeticDetails.reduce((acc, cosmetic) => {
+    const cartItem = cartItems.find((item) => item.cosmetic_id === cosmetic.id);
+    return acc + (cartItem ? cosmetic.price * cartItem.quantity : 0);
+  }, 0);
+
+  const totalQuantity = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const tax = subtotal * TAX_RATE; // Assuming a tax rate of 11%
+  const grandTotal = subtotal + tax;
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-lg font-semibold">Loading...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-lg font-semibold text-red-500">{error}</p>
+      </div>
+    );
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const validation = paymentSchema.safeParse(formData);
+    if (!validation.success) {
+      setFormErrors(validation.error.issues);
+      return;
+    }
+    setFormErrors([]);
+
+    const submissionData = new FormData();
+    if (formData.proof) {
+      submissionData.append("proof", formData.proof);
+    }
+
+    if (BookingFormData) {
+      submissionData.append("name", BookingFormData.name);
+      submissionData.append("email", BookingFormData.email);
+      submissionData.append("phone", BookingFormData.phone);
+      submissionData.append("address", BookingFormData.address);
+      submissionData.append("post_code", BookingFormData.post_code);
+      submissionData.append("city", BookingFormData.city);
+    }
+
+    formData.cosmetic_ids.forEach((item, index) => {
+      submissionData.append(`cosmetic_ids[${index}][id]`, String(item.id));
+      submissionData.append(
+        `cosmetic_ids[${index}][quantity]`,
+        String(item.quantity)
+      );
+    });
+
+    try {
+      setLoading(true);
+      const response = await apiClient.post(
+        "/booking-transaction",
+        submissionData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      if (response.status === 200 || response.status === 201) {
+        console.log("Payment submitted successfully:", response.data.data);
+        const bookingTrxId = response.data.data.booking_trx_id;
+
+        if (!bookingTrxId) {
+          console.error("Booking transaction ID is missing in the response.");
+        }
+
+        setSuccess("Payment submitted successfully!");
+
+        localStorage.removeItem("cart");
+        localStorage.removeItem("bookingFormData");
+        setFormData({
+          proof: null,
+          cosmetic_ids: [],
+        });
+        setLoading(false);
+
+        navigate(`/booking-finished?trx_id=${bookingTrxId}`);
+      } else {
+        console.error("Failed to submit payment:", response.status);
+
+        setLoading(false);
+      }
+    } catch (error: unknown) {
+      console.error("Error submitting payment:", error);
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as { response?: unknown }).response === "object" &&
+        (error as { response?: { data?: unknown } }).response &&
+        "data" in (error as { response?: { data?: unknown } }).response!
+      ) {
+        console.error(
+          "Backend validation errors:",
+          (error as { response: { data: unknown } }).response.data
+        );
+      }
+      setLoading(false);
+      setFormErrors([]);
+    }
+  };
+
   return (
     <main className="mx-auto flex min-h-screen max-w-[640px] flex-col gap-5 bg-[#F6F6F8] pb-[30px]">
       <section id="NavTop">
         <div className="px-5">
           <div className="mt-5 flex w-full flex-col gap-5 rounded-3xl bg-white pb-[44px] pt-3">
             <div className="relative">
-              <a href="booking.html">
+              <Link to={`/booking`}>
                 <div className="absolute left-3 top-1/2 flex size-[44px] shrink-0 -translate-y-1/2 items-center justify-center rounded-full border border-cosmetics-greylight">
                   <img
                     src="/assets/images/icons/left.svg"
@@ -85,7 +216,8 @@ export default function PaymentPage() {
                     className="size-5 shrink-0"
                   />
                 </div>
-              </a>
+              </Link>
+
               <div className="flex flex-col gap-[2px]">
                 <h1 className="text-center text-lg font-bold leading-[27px]">
                   Payment
@@ -191,7 +323,7 @@ export default function PaymentPage() {
                 />
                 <p>Total Quantity</p>
               </div>
-              <strong className="font-semibold">198 Items</strong>
+              <strong className="font-semibold">{totalQuantity}</strong>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-[6px]">
@@ -202,7 +334,9 @@ export default function PaymentPage() {
                 />
                 <p>Sub Total</p>
               </div>
-              <strong className="font-semibold">Rp 19.000.000</strong>
+              <strong className="font-semibold">
+                {formatCurrency(subtotal)}
+              </strong>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-[6px]">
@@ -246,7 +380,7 @@ export default function PaymentPage() {
                 />
                 <p>Tax 11%</p>
               </div>
-              <strong className="font-semibold">Rp 8.380.391</strong>
+              <strong className="font-semibold">{formatCurrency(tax)}</strong>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-[6px]">
@@ -258,7 +392,7 @@ export default function PaymentPage() {
                 <p>Grand Total</p>
               </div>
               <strong className="text-[22px] font-bold leading-[33px] text-cosmetics-pink">
-                Rp 58.380.391
+                {formatCurrency(grandTotal)}
               </strong>
             </div>
           </div>
@@ -465,7 +599,7 @@ export default function PaymentPage() {
           </div>
         </div>
       </section>
-      <form action="booking-finished.html" className="flex flex-col gap-5 px-5">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5 px-5">
         <section id="PaymentConfirmation">
           <div className="flex flex-col gap-5 rounded-3xl bg-white px-[14px] py-5">
             <div className="flex items-center gap-[10px]">
@@ -496,7 +630,8 @@ export default function PaymentPage() {
                   </p>
                   <input
                     type="file"
-                    name="file-upload"
+                    name="proof"
+                    onChange={handleFileChange}
                     id="file-upload"
                     className="absolute top-1/2 w-full -translate-y-1/2 rounded-full py-[15px] pl-[57px] pr-[13px] font-semibold text-[#030504] opacity-0 file:hidden focus:outline-none"
                   />
@@ -510,16 +645,22 @@ export default function PaymentPage() {
                   </div>
                 </div>
               </div>
-              <p className="text-sm leading-[21px] text-[#E70011]">
-                Lorem tidak valid silahkan coba lagi ya
-              </p>
+              {formErrors.find((error) => error.path.includes("proof")) && (
+                <p className="text-sm leading-[21px] text-[#E70011]">
+                  {
+                    formErrors.find((error) => error.path.includes("proof"))
+                      ?.message
+                  }
+                </p>
+              )}
             </label>
             <button
+              disabled={loading}
               type="submit"
               className="flex w-full items-center justify-between rounded-full bg-cosmetics-gradient-pink-white px-5 py-[14px] transition-all duration-300 hover:shadow-[0px_6px_22px_0px_#FF4D9E82]"
             >
               <strong className="font-semibold text-white">
-                Confirm My Payment
+                {loading ? "Processing..." : "Submit Payment"}
               </strong>
               <img
                 src="/assets/images/icons/right.svg"
