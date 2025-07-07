@@ -1,54 +1,120 @@
-# React + TypeScript + Vite
+# GrantCosmetic Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend web application for GrantCosmetic (**backend repository**), built using **React**, **TypeScript**, and **Vite**. It is designed to provide a fast, responsive, and modern user experience for browsing, searching, and booking cosmetic products and services.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Table of Contents
 
-## Expanding the ESLint configuration
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Development](#development)
+- [ESLint & Code Quality](#eslint--code-quality)
+- [License](#license)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## Features
+
+- **Product Browsing**: View and filter cosmetics by category and brand.
+- **Product Details**: See detailed information, benefits, testimonials, and photos for each cosmetic product.
+- **Cart & Booking**: Add products to cart, manage items, and complete bookings with user information.
+- **Responsive UI**: Styled with modern CSS and utility classes for a seamless experience on all devices.
+- **Type Safety**: Strict TypeScript types for UI, data, and API interactions.
+
+---
+
+## Tech Stack
+
+- **React**: UI library for building interactive interfaces.
+- **TypeScript**: Typed JavaScript for safety and developer experience.
+- **Vite**: Lightning-fast build tool and development server.
+- **CSS**: Custom styles and utility classes for layout and components.
+- **ESLint**: Enforced code quality with recommended React and TypeScript rules.
+- **API Client**: For fetching cosmetic data and handling bookings.
+
+---
+
+## Project Structure
+
+```
+.
+├── public/                # Static assets and icons
+├── src/
+│   ├── pages/             # Main app pages (e.g., MyCartPage.tsx)
+│   ├── types/             # TypeScript types (e.g., type.ts)
+│   ├── index.css          # Global styles and utility classes
+│   └── main.tsx           # App entry point
+├── index.html             # HTML entry (mounts React app)
+├── vite.config.ts         # Vite configuration
+├── eslint.config.js       # ESLint rules and plugins
+└── README.md              # Project documentation
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
+
+## Development
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (v16+ recommended)
+- [Yarn](https://yarnpkg.com/) or [npm](https://www.npmjs.com/)
+
+### Getting Started
+
+```bash
+# Install dependencies
+yarn install
+
+# Start development server
+yarn dev
+
+# Open http://localhost:5173 in your browser
+```
+
+### Building for Production
+
+```bash
+yarn build
+```
+
+### Preview Production Build
+
+```bash
+yarn preview
+```
+
+---
+
+## ESLint & Code Quality
+
+Type-aware linting for React and TypeScript is enabled. Key configurations include:
+
+- [@eslint/js](https://eslint.org/)
+- [typescript-eslint](https://typescript-eslint.io/)
+- [eslint-plugin-react-hooks](https://www.npmjs.com/package/eslint-plugin-react-hooks)
+- [eslint-plugin-react-refresh](https://www.npmjs.com/package/eslint-plugin-react-refresh)
+
+To expand ESLint with more React rules, consider:
 
 ```js
-// eslint.config.js
 import reactX from 'eslint-plugin-react-x'
 import reactDom from 'eslint-plugin-react-dom'
 
 export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
+  plugins: { 'react-x': reactX, 'react-dom': reactDom },
   rules: {
-    // other rules...
-    // Enable its recommended typescript rules
     ...reactX.configs['recommended-typescript'].rules,
     ...reactDom.configs.recommended.rules,
   },
 })
 ```
+
+---
+
+## License
+
+This project is licensed under the MIT License.
+
+---
